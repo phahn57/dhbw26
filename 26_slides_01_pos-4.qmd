@@ -1,0 +1,377 @@
+---
+title: "dataR_01_intro"
+author: "Peter Hahn"
+format:
+  revealjs:
+    embed-resources: true
+    auto-stretch: true
+    theme: [default, mystyle]
+revealjs-plugins:
+  - editable
+filters:
+  - editable
+editor: visual
+---
+
+```{r}
+#| echo: false
+#| message: false
+library(here)
+library(tidyverse)
+library(palmerpenguins)
+```
+
+# Einführung in die Datenanalyse mit R
+
+![intro](./images/atfirst.png)
+
+All [Artwork by allison_horst](https://twitter.com/allison_horst)
+
+## Teilnehmer
+
+![Who are you?](./images/rlearners.png)
+
+## Me
+
+![Dozent](./images/teacher.png)
+
+## Vulpius Klinik
+
+![Vulpe](./images/vulpius.png)
+
+##  {.scrollable}
+
+![LinkedIn](./images/linkedin.jpg)   https://www.linkedin.com/in/kphahn/
+
+## Info Medium and github
+
+kphahn57 https://phahn57.github.io
+
+## Erwartungen
+
+![intro](./images/erwartung.png)
+
+## Use Case
+
+::: incremental
+Klinik Reporting\
+Fast track controlling
+Diese Präsentation
+:::
+
+## Das Ziel
+
+![](./images/chart_wanted.png)
+
+# Install R and Positron
+
+[CRAN](https://cran.r-project.org/). https://cran.r-project.org/
+
+[IDE](https://positron.posit.co/). https://positron.posit.co/
+
+## Positron IDE
+
+## New Project
+
+New Folder from template
+
+## Quarto Book
+
+New Quarto Project - Book
+
+## R script
+
+library(tidyverse)\
+library(here)
+
+## Customize IDE
+
+::: incremental
+Was ist wo? - Console\
+- Script\
+- terminal\
+- Command Shift P : command palette
+:::
+
+## Erweiterungen
+
+-   Positron R Packages move to right panel\
+-   Quarto\
+-   Air
+
+## Struktur
+
+![IDE](./images/project_structure.png)
+
+## Console
+
+::: incremental
+3 + 3\n2 \^ 4
+:::
+
+# Make it reproducible
+
+## Make a new quarto document
+
+File - New File - Quarto
+
+## Markdown
+
+## RMarkdown
+
+/##
+
+/\`\`{r}\`
+
+/\`\`\`
+
+/\*\* \*\*
+
+## Useful shortcuts
+
+-   command shift P : command palette
+-   command shift I : insert chunk
+-   option - : assignment operator
+-   command shift M : pipe
+
+## Markdown file
+
+-   new file
+-   save as .md
+-   write markdown
+-   preview
+
+## options
+
+::: incremental
+-   #\| eval: TRUE
+-   #\| echo: TRUE
+-   #\| message: TRUE
+-   #\| warning: TRUE
+-   #\| fig.width\n
+:::
+
+## Knitr
+
+![intro](./images/knitr.png)\
+Dynamic report generation with R
+
+## Knit
+
+html vs pdf.\n    install.packages('tinytex')\
+tinytex::install_tinytex() \# install TinyTeX
+
+## knitr::opts
+
+### `{r setup, include=FALSE} ### knitr::opts_chunk$set(echo = FALSE, messages = FALSE, warning ### = FALSE) ###`
+
+# Die Pinguine
+
+![](./images/penguins.png)
+
+## Bill length and depth
+
+![](./images/culmen_depth.png)
+
+## Code
+
+::: incremental
+-   library(tidyverse)
+-   library(palmerpenguins)
+-   library(ggthemes)
+-   penguins
+-   glimpse(penguins)
+-   view(penguins)
+:::
+
+## Documentation
+
+Future self will thank you\
+Dokumentiere den Code
+
+## Plotting_1
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(data = penguins)
+```
+
+## Plotting_2
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+)
+```
+
+## Plotting_3
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+) +
+  geom_point()
+```
+
+## Plotting_4
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g, color = species)
+) +
+  geom_point()
+```
+
+## Add smooth
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g, color = species)
+) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+```
+
+## local vs global
+
+``` {.r code-line-numbers="6,14"}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point() +
+        geom_smooth(method = "lm")
+        
+        
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(mapping = aes(color = species)) +
+        geom_smooth(method = "lm")
+```
+
+## result
+
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+) +
+  geom_point(mapping = aes(color = species)) +
+  geom_smooth(method = "lm")
+```
+
+## simplify
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(
+  penguins,
+  aes(x = flipper_length_mm, y = body_mass_g)
+) +
+  geom_point(aes(color = species)) +
+  geom_smooth(method = "lm")
+```
+
+## Labelling the plot
+
+::: incremental
+-   search in help
+-   lab...
+:::
+
+## Categorical variable distributions
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(penguins, aes(x = species)) +
+  geom_bar()
+```
+
+## numerical variable distribution
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(binwidth = 200)
+```
+
+## binwidth ?
+
+## alternative
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_density()
+```
+
+## numerical and categorical I
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(penguins, aes(x = body_mass_g, color = species)) +
+  geom_density(linewidth = 0.75)
+```
+
+## numerical and categorical II
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(penguins, aes(x = species, body_mass_g)) +
+  geom_boxplot()
+```
+
+## numerical and categorical III
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(penguins, aes(x = species, body_mass_g)) +
+  geom_violin()
+```
+
+## numerical and categorical IV
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(penguins, aes(x = species, body_mass_g)) +
+  geom_violin() +
+  geom_jitter(width = 0.1, aes(color = species))
+```

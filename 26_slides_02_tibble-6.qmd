@@ -1,0 +1,597 @@
+---
+title: "dataR_02"
+author: "Peter Hahn"
+format:
+  revealjs:
+    embed-resources: true
+    theme: [default, mystyle]
+editor: visual
+---
+
+## LLM Server
+::: incremental
+https://portal.llm.services.dhbw.cloud
+https://api.llm.services.dhbw.cloud/v1
+Model : code  
+Add custom provider
+:::
+
+## Data frame (tibble)
+
+dataframe\
+tibble\
+filter\
+select\
+group_by
+
+## libraries
+
+tidyverse\
+nycflights23  
+ggthemes
+
+```{r}
+#| echo: false
+#| message: false
+library(tidyverse)
+library(nycflights23)
+library(ggthemes)
+```
+
+## Wiederholung der Kenntnisse
+
+Erstellen einer Quarto Präsentation. Nutzen Sie iris\
+- erstellen sie eine Abb. der Verteilung der Sepal.Length der spezies
+
+## Lösung für die Grafik (mtcars)
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+
+mtcars |> ggplot(aes(hp, mpg)) +
+  geom_point(aes(color = cyl))
+```
+
+
+## Lösung für iris
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+
+iris |> ggplot(aes(Sepal.Length)) +
+  geom_density(aes(color =Species))
+```
+
+## Verschönern mit ggthemes
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+# Values
+library(ggthemes)
+mtcars |> ggplot(aes(hp, mpg)) +
+  geom_point(aes(color = cyl)) +
+  theme_bw()
+```
+
+## ggthemes::theme\_..
+::: incremental
+theme_economist  
+theme_fivethirtyeight()  
+theme_excel()  
+theme_calc()  
+theme_wsj()  
+theme_stata()  
+:::
+
+
+## Values
+
+::: incremental
+-   3 + 3 #use empty space after +,-,\*,/...
+-   x \<- c(1,1,2,3,5,7)
+-   x \* 2
+-   y \<- seq(from = 1, to = 10, by = 1) \# look in help
+-   y \<- seq(1,10)\
+-   z \<- seq(1,20,2)
+-   z \* 5
+:::
+
+## Bekannte Menge von Werten
+
+Tage x1 \<- c("Mo", "Di", "Fr", "Sa")
+
+## Sortiere
+
+sort(x1) ???
+
+## Factors
+
+**categorical variables**
+
+variables that have a fixed\
+and.\
+known set of possible values.
+
+## Nominalskaliert
+
+namen \<- c("Meier","Müller","Schulze")\
+blutgruppe \<-c("A","B","0","AB")
+
+## Ordinalskaliert
+
+week_levels \<- c( "Mo","Di","Mi","Do","Fr","Sa","So" )
+
+y1 \<- factor(x1, level = week_levels)
+y1
+
+## factor
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+x_fact <- factor(c("a", "b", "c"))
+x_fact
+```
+
+## Vorsicht ??
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+x_fact <- factor(c("4", "10", "3", "20", "21"))
+as.numeric(x_fact)
+```
+
+## Levels
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+levels(x_fact)
+```
+
+## as.numeric(factor)
+
+as.numeric(as.character(x_fact))
+
+## as.numeric(factor) -
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+c <- as.numeric(as.character(x_fact))
+```
+
+# Tibble
+
+https://tibble.tidyverse.org/
+
+## nycflights23
+
+Flight data from 2023
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights <- flights
+```
+
+# Tibble
+
+-   flights.\
+-   view(flights)
+
+## number of origins
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+unique(flights$origin)
+```
+
+## Access tibble
+
+::: incremental
+-   flights\$origin
+-   flights\[,13\]
+-   flights\[1,\]
+-   flights\[2,13\]
+-   flights\[1:2,\]
+-   flights\[1, c(1,13)\]
+-   flights\$carrier\[1:6\]\
+:::
+
+## dep_delay
+
+::: incremental
+-   Verteilung
+-   histogram
+:::
+
+## dep_delay
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |> ggplot(aes(dep_delay)) + geom_histogram()
+```
+
+# Rows
+
+## Display
+
+::: incremental
+head(flights).\
+tail(flights).\
+slice_head(flights, n = 3).\
+slice_max(flights, n = 3, order_by = dep_delay)
+:::
+
+## dep_delay \< 250
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |> filter(dep_delay < 250) |>
+ggplot(aes(dep_delay)) + geom_histogram()
+```
+
+## Zwei Bedingungen entferne \< 0
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |> filter(dep_delay < 250 & dep_delay > 0 ) |>
+ggplot(aes(dep_delay)) + geom_histogram()
+
+```
+
+## dep_delay in Jan, Feb kleiner 250 größer 0
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>    
+    filter(dep_delay < 250 & dep_delay > 0 ) |> filter(month == 1 | month == 2) |>   
+    ggplot(aes(dep_delay)) +    
+    geom_histogram()
+```
+
+## Alternative
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |> 
+  filter(dep_delay < 250 & dep_delay > 0 ) |>   
+  filter(month %in% c(1,2)) |>    
+  ggplot(aes(dep_delay)) +    
+  geom_histogram()   
+```
+
+## Verspätungen nach Monat
+
+Frage: Wie verhalten sich die Verspätungen gegenüber dem Monat, boxplot?
+
+## Lösung ??
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+
+flights |>
+  ggplot(aes(month, dep_delay, color = month)) +   
+  geom_boxplot()
+```
+
+## Gruppieren
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+
+flights |>
+  ggplot(aes(month, dep_delay, group = month)) +   
+  geom_boxplot()
+```
+
+## Alternative
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+
+flights |>
+  ggplot(aes(as.factor(month), dep_delay)) +   
+  geom_boxplot()
+```
+
+## Ordnung Monat, Tag, dep_time
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+arrange(month,day,dep_time)
+```
+
+## Umgekehrt
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+arrange(desc(month))
+```
+
+## Aufgaben (alle Flüge mit diesen Konditionen)
+
+-   in den Monaten (September,Oktober)
+-   Die fünf Flüge mit der grössten Verspätung
+
+## September,Oktober
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |> filter(month %in% c(9, 10))
+```
+
+## längste delay
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+  arrange(desc(dep_delay)) |>  
+  slice_max(dep_delay, n = 5)
+```
+
+# Columns
+
+## Auswählen Monate, Tage, dep_delay
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |> select(month,day,dep_delay)
+```
+
+## Entfernen
+
+flights \|\> select(-year)
+
+## von - bis
+
+flights \|\> select(year:day)
+
+## Helper
+
+flights \|\> select(where(is.character))\
+flights \|\> select(starts_with("d"))\
+flights \|\> select(where(is.numeric))
+
+## Helper functions
+
+-   starts_with("abc"): matches names that begin with “abc”.
+-   ends_with("xyz"): matches names that end with “xyz”.
+-   contains("ijk"): matches names that contain “ijk”.
+-   num_range("x", 1:3): matches x1, x2 and x3.
+
+## Beispiel
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+select(contains("dep"))
+```
+
+# Neue Spalten berechnen
+
+## mutate
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+mutate( gain = dep_delay - arr_delay,
+speed = distance / air_time * 60 )
+```
+
+## Übersichtlicher Position 1
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+mutate( gain = dep_delay - arr_delay,
+speed = distance / air_time * 60, .before = 1 )
+```
+
+## Wohin
+
+flights \|\>\
+mutate( gain = dep_delay - arr_delay,\
+speed = distance / air_time \* 60, .after = day )
+
+## Was
+
+flights \|\>\
+mutate( gain = dep_delay - arr_delay,\
+speed = distance / air_time \* 60, .keep = "used" )
+
+## Häufige Helfer
+
+Wenn distance grösser 1000 dist_var = 1 sonst 0\
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+mutate(dist_var = ifelse(distance <1000,1,0),.before = 1)
+```
+
+## Beispiel mit ifelse
+
+## Verwandle Origin in eine Zahl
+
+Vermeide geschachtelte ifelse
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+mutate(origin_var = case_when(
+origin == "EWR" ~ 1,
+origin == "JFK" ~ 2,
+origin == "LGA" ~ 3,
+.default = 0),
+.before = 1)
+```
+
+# Groups
+
+## group_by
+
+flights \|\>\
+group_by(month)
+
+## summarize
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+group_by(month) |>
+summarize(avg_delay = mean(dep_delay))
+```
+
+## Help
+
+?summarize
+
+## Lösung
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+group_by(month) |>
+summarize(avg_delay = mean(dep_delay, na.rm = TRUE))
+```
+
+## Anzahl
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+group_by(month) |>
+summarize( Anzahl = n())
+```
+
+## Kürzer
+
+flights \|\>\
+count(month)\
+
+count() ersetzt group_by \|\> summarize(x = n())
+
+## most frequent carrier
+
+## Lösung
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+count(carrier) |>
+arrange(desc(n))
+```
+
+## mean dep_delay for top 5 carrier
+
+## Lösung
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+group_by(carrier) |>
+summarize(n =n(), mean_delay = mean(dep_delay, na.rm = TRUE)) |>
+arrange(desc(n)) |> slice_max(n, n=5)
+```
+
+## Das ganze für jeden origin
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+group_by(origin,carrier) |>
+summarize(n =n(), mean_delay = mean(dep_delay, na.rm = TRUE)) |>
+arrange(desc(n)) |>
+slice_max(n, n=5)
+```
+
+## Mehrfachoperationen Median aller numerischen Spalten
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+summarize(across(dep_time:arr_time, median, na.rm = TRUE))
+```
+
+## Entferne die NA
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights |>
+filter(!if_any(dep_time:arr_time, is.na)) |>
+summarize(across(dep_time:arr_time, mean))
+```
+
+## Ende
+
+Thank you!
