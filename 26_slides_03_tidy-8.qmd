@@ -1,0 +1,672 @@
+---
+title: "dataR_03"
+author: "Peter Hahn"
+format:
+  revealjs:
+    embed-resources: true
+    theme: [default, mystyle]
+editor: visual
+---
+
+# Tidy data
+
+```{r}
+#| echo: false
+#| message: false
+library(here)
+library(tidyverse)
+library(tidyr)
+library(ggthemes)
+library(gt)
+
+```
+
+## Grafik zu Beginn
+
+![](./images/Flucovid.jpg)
+
+## Problem der letzten Woche
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+x1 <- c("Mon", "Mi", "Die", "Fr", "Sa")
+week_levels <- c("Mon", "Die", "Mi", "Do", "Fr", "Sa", "So")
+y1 <- factor(x1, level = week_levels)
+y1
+```
+
+## Was fehlte?
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+sort(y1)
+```
+
+## Wiederholung
+
+Nutzen Sie die "starwars" Daten.\
+Erstellen sie eine Tabelle mit der mittleren Größe und dem mittleren Gewicht für jede Kombination aus species und sex mit der jeweiligen Anzahl.
+
+## Lösung
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+starwars |>
+  group_by(species, sex) |>
+  summarise(
+    mean_height = mean(height, na.rm = TRUE),
+    mean_mass = mean(mass, na.rm = TRUE),
+    n = n()
+  )
+```
+
+## NA
+
+::: incremental
+-   filter(!is.na(mass)) nur eine Variable
+-   drop_na(mass, height)
+-   drop_na()
+:::
+
+## Frage 2
+
+Wir wollen jetzt nur die insgesamt 5 häufigsten n_max darstellen. Es gibt mindestens zwei Lösungen.
+
+## Lösung 1
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+starwars |>
+  group_by(species, sex) |>
+  summarise(
+    mean_height = mean(height, na.rm = TRUE),
+    mean_mass = mean(mass, na.rm = TRUE),
+    no = n()
+  ) |> 
+  slice_min(no, n = 5)
+
+```
+
+## Lösung 2
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+starwars |>
+  group_by(species, sex) |>
+  summarise(
+    mean_height = mean(height, na.rm = TRUE),
+    mean_mass = mean(mass, na.rm = TRUE),
+    n = n()
+  ) |>
+  ungroup() |>
+  slice_max(n, n = 5)
+```
+
+## Aufgabe 3
+
+Nutzen Sie mtcars. Stellen sie den Hubraum als boxplot im Verhältnis zur Anzahl der Zylinder dar.
+
+## Lösung 3
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(mtcars) +
+  aes(x = cyl, y = disp, group = cyl) +
+  geom_boxplot() +
+  labs(
+    title = "Disposition by number of cylinders",
+    x = "Number of cylinders",
+    y = "Displacement (cu.in.)",
+  )
+```
+
+## Ist der Hintergrund gut??
+
+## Alternativen:
+
+theme...
+
+## ggthemes()
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(mtcars) +
+  aes(
+    x = cyl,
+    y = disp,
+    group = cyl
+  ) +
+  geom_boxplot() +
+  labs(
+    title = "Disposition by number of cylinders",
+    x = "Number of cylinders",
+    y = "Displacement (cu.in.)",
+  ) +
+  theme_stata()
+```
+
+## Data table 2
+
+```{r}
+table2
+```
+
+## Besser mit Tabelle 3?
+
+```{r}
+table3
+```
+
+## Neue Zeile mit rate?
+
+Ist das direkt möglich?
+
+```{r}
+table2
+```
+
+## Umwandlung?
+
+![](./images/tidy_data.jpg)
+
+## First law of data driven research:
+
+"No matter what format your data is in, it will be less than ideal for your research."
+
+# Tidying data
+
+sauber aufgeräumt geordnet
+
+## Prinzip
+
+![Hadley Wickham](./images/tidy-1.png)
+
+## table1
+
+```{r}
+table1
+```
+
+## Vorteil
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+table1 |>
+  mutate(rate = cases / population * 10000)
+```
+
+## Messy data billboard charts
+
+```{r}
+library(tidyr)
+billboard <- tidyr::billboard
+billboard
+```
+
+## plot
+
+Wieviel Wochen stehen die Titel in welchem Ranking?\
+billboard \|\>\
+ggplot(aes(x,y)) + geom_line()\
+x = week, y = rank
+
+Aufgabe: x in col week und y in col rank
+
+## Lösung ??
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+billboard |>
+  pivot_longer(
+    cols = starts_with("wk"),
+    names_to = "week",
+    values_to = "rank"
+  )
+```
+
+## Structure and "NA
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+billboard |>
+  pivot_longer(
+    cols = starts_with("wk"),
+    names_to = "week",
+    values_to = "rank",
+    values_drop_na = TRUE
+  )
+```
+
+## Character to number
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+billboard_longer <- billboard |>
+  pivot_longer(
+    cols = starts_with("wk"),
+    names_to = "week",
+    values_to = "rank",
+    values_drop_na = TRUE
+  ) |>
+  mutate(
+    week = parse_number(week)
+  )  |> 
+    ggplot(aes(week, rank, group = artist)) +
+    geom_line()
+billboard_longer
+```
+
+## blood pressure
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df <- tribble(
+  ~id,
+  ~bp1,
+  ~bp2,
+  "A",
+  100,
+  120,
+  "B",
+  140,
+  115,
+  "C",
+  120,
+  125
+)
+df
+```
+
+## pivot_longer
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df |>
+  pivot_longer(
+    cols = bp1:bp2,
+    names_to = "measurement",
+    values_to = "value"
+  )
+```
+
+## names
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df <- tribble(
+  ~id,
+  ~bp1,
+  ~bp2,
+  "Franz, Holz",
+  100,
+  120,
+  "Kurt, Müller",
+  140,
+  115,
+  "Heinz, Haas",
+  120,
+  125
+)
+df
+```
+
+## separate and wider
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_delim <- df |>
+  separate_wider_delim(cols = id, delim = ",", names = c("Vorname", "Name"))
+df_delim
+```
+
+## Homework
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df <- tribble(
+  ~id,
+  ~bp1,
+  ~bp2,
+  ~begleit_erkrankung,
+  "Franz, Holz",
+  100,
+  120,
+  "Diabetes,Ulcus,Herzinsuffizienz",
+  "Kurt, Müller",
+  140,
+  115,
+  "Ulcus,Herzinsuffizienz,KHK",
+  "Heinz, Haas",
+  120,
+  125,
+  "Diabetes,KHK"
+)
+df
+```
+
+## Step 1
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_delim <- df |>
+  separate_wider_delim(cols = id, delim = ",", names = c("Vorname", "Name")) |>
+  separate_wider_delim(
+    cols = begleit_erkrankung,
+    delim = ",",
+    names_sep = "",
+    too_few = "align_start"
+  )
+df_delim
+```
+
+## Step 2
+
+```{r }
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_delim <- df_delim |>
+  pivot_longer(cols = starts_with("begleit"))
+df_delim
+```
+
+## Step 3
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_del <- df_delim |>
+  select(-name) |>
+  count(Vorname, Name, bp1, bp2, value) |>
+  pivot_wider(names_from = value, values_from = n)
+df_del
+
+```
+
+# Exercises
+
+## tidy table 2 and 3
+
+![try](./images/error.png) \## solution table2
+
+## tidy table2
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+table2 %>%
+  pivot_wider(names_from = type, values_from = count)
+```
+
+## tidy table3
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+table3 |>
+  separate_wider_delim(rate, delim = "/", names = c("cases", "population"))
+
+```
+
+## Flüge 2013 und 2023
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+
+flights13 <- nycflights13::flights
+flights23 <- nycflights23::flights
+fl_all <- bind_rows(flights13, flights23)
+```
+
+## Vergleich der Jahre 2013 und 2023 (dep_delay) density
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+fl_all |>
+  filter(!is.na(dep_delay)) |>
+  filter(dep_delay < 150) |>
+  ggplot(aes(dep_delay)) +
+  geom_density(aes(color = as.factor(year))) +
+  theme_stata()
+
+```
+
+## Vergleich der Jahre 2013 und 2023 (dep_delay) boxplot
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+fl_all |>
+  filter(!is.na(dep_delay)) |>
+  filter(dep_delay < 150) |>
+  #ggplot(aes(dep_delay), .group = year) +
+  ggplot(aes(as.factor(year), dep_delay)) +
+  geom_boxplot(aes(color = as.factor(year))) +
+  theme_stata()
+
+```
+
+## Vergleich der Jahre 2013 und 2023 (dep_delay) violin
+
+Farbe??
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+fl_all |>
+  filter(!is.na(dep_delay)) |>
+  filter(dep_delay < 150) |>
+  ggplot(aes(as.factor(year), dep_delay)) +
+  geom_violin() +
+  theme_stata()
+
+```
+
+## Tabellarisch Vergleich mittlere Verspätung pro Monat, Jahr, carrier
+
+::: incremental
+-   ??
+-   group_by()
+-   summarize()
+-   fl_all \|\> group_by(month,year,carrier) \|\>\
+    summarize(avg_delay = mean(dep_delay, na.rm = TRUE) )
+:::
+
+## Average delay
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+avg_delay <- fl_all |>
+  group_by(month, year, carrier) |>
+  summarize(avg_delay = mean(dep_delay, na.rm = TRUE))
+avg_delay
+
+```
+
+## Übersichtlch ?
+
+## longer \<-\> wider
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+avg_delay |>
+  pivot_wider(
+    names_from = carrier,
+    values_from = avg_delay
+  )
+
+```
+
+## Perfekt ?
+
+Jahr und Monat
+
+## new column and delete month and year
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+avg_delay <- avg_delay |>
+  mutate(year_month = str_c(year, month, sep = "_")) |>
+  select(-year, -month)
+avg_delay
+```
+
+## Fehler Entfernung von month und year geht nicht
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+avg_delay <- avg_delay |>
+  ungroup() |>
+  mutate(year_month = str_c(year, month, sep = "_")) |>
+  select(-year, -month)
+avg_delay
+```
+
+## Übersichtlicher
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+avg_delay |>
+  pivot_wider(
+    names_from = year_month,
+    values_from = avg_delay
+  ) |> gt()
+```
+
+## Joining data
+
+## keys
+
+```{r}
+airlines <- nycflights23::airlines
+airlines
+```
+
+## airports
+
+```{r}
+airports <- nycflights23::airports
+airports
+```
+
+## relation
+
+![tables](./images/flights.png)\
+
+## Checking keys
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+airports |> count(faa) |> filter(n > 1)
+```
+
+## Check missing values
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+airports |> filter(is.na(faa))
+
+```
+
+## mutating joins
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights2 <-
+  nycflights23::flights |>
+  select(year, time_hour, origin, dest, tailnum, carrier)
+flights2
+```
+
+## left_join
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flights2 |>
+  left_join(airlines)
+```
+
+## Was fehlt?? anti_join Fehlende Airports
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+nycflights13::flights |>
+  distinct(faa = dest) |>
+  anti_join(airports)
+```
+
+## 722 fehlende Flüge
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+planes <- nycflights13::planes
+
+nycflights13::flights |>
+  distinct(tailnum) |>
+  anti_join(planes)
+```
