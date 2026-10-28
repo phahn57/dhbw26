@@ -1,0 +1,430 @@
+---
+title: "dataR_04"
+author: "Peter Hahn"
+format:
+  revealjs:
+    embed-resources: true
+    theme: [default, mystyle]
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(ggthemes)
+library(readxl)
+library(purrr)
+library(skimr)
+library(here)
+```
+
+# Loading data
+
+## Grafik zu Beginn
+
+![intro](./images/polizei.jpeg)
+
+## Polizei data
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df <- tribble(
+  ~lk  , ~jahr , ~wert ,
+  "HN" ,  2022 ,    77 ,
+  "HN" ,  2023 ,   116 ,
+  "HN" ,  2024 ,   102 ,
+  "LK" ,  2022 ,    75 ,
+  "LK" ,  2023 ,    88 ,
+  "LK" ,  2024 ,    64 ,
+  "HL" ,  2022 ,    28 ,
+  "HL" ,  2023 ,    35 ,
+  "HL" ,  2024 ,    27
+)
+```
+
+## Alternative
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df |>
+  ggplot(aes(lk, wert)) +
+  geom_col(position = "dodge", aes(fill = as.factor(jahr))) +
+  theme_stata()
+```
+
+## csv
+
+Fake clinic data
+
+## Klinik Daten
+
+stat \<- read_csv("./data/fk_stat_2.csv")\
+
+## Message
+
+Warning: One or more parsing issues, call `problems()` on your data frame for details, e.g.:\
+dat \<- vroom(...) problems(dat) Rows: 31299 Columns: 1 Delimiter: "," chr (1): Vorname;AufnDat;AZeit;EntlDat;Abt;Kateg.;OP-Datum;SN-Zeit;DRG/6.1-Entgelt;eff.Gew.
+
+ℹ Use `spec()` to retrieve the full column specification for this data. ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message
+
+## Klinik Daten 2
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+stat <- read_csv2(here("data", "fk_stat_2.csv"))
+```
+
+## Column names
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+colnames(stat)
+```
+
+## Solution
+
+rename colnames(stat) \<- c("a","b","c"...)
+
+## janitor
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+stat <- janitor::clean_names(stat)
+```
+
+## colnames again
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+
+colnames(stat)
+```
+
+## airquality
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+ggplot(data = airquality, aes(x = Ozone, y = Solar.R)) +
+  geom_point()
+```
+
+## visualizing missing
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+library(naniar)
+vis_miss(airquality)
+```
+
+## upset plot
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+gg_miss_upset(airquality)
+```
+
+## riskfactors
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+gg_miss_upset(riskfactors)
+```
+
+## back to stat
+
+## outlier
+
+::: incremental
+-   welche Variablen?
+-   wie
+:::
+
+## select numerical 1
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+stat_num <- stat |> select_if(is.numeric)
+stat_num
+```
+
+## plot numerical
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+stat_num |>
+  select(-aufnahme_nummer) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "cols",
+    values_to = "val"
+  ) |>
+  ggplot(aes(as.factor(cols), val)) +
+  geom_violin() +
+  theme_stata()
+```
+
+## max und min range
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+stat_range <- stat_num |> map(range)
+stat_range
+```
+
+# hierarchical data
+
+::: incremental
+-   very common
+-   tree-like
+-   turn into row and columns
+:::
+
+## Vectors
+
+```{r}
+a <- c(1, 2, 3)
+b <- c("a", "b", "c")
+c <- TRUE
+```
+
+## Lists untertschiedliche Typen
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+a <- c(1, 2, 3)
+b <- c("a", "b", "c")
+c <- TRUE
+```
+
+## d
+
+d \<- c(a,b,c) ??
+
+## list e
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+e <- list(a, b, c)
+```
+
+## unnamend list
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+x1 <- list(1:5, "a", TRUE)
+x1
+```
+
+## Named lists
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+x2 <- list(a = 1:2, b = 1:3, c = 1:4)
+str(x2)
+```
+
+## Erstes Element
+
+x2\[1\]
+
+## Zweites Element
+
+x2\$b
+
+# Lists containing lists
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+x3 <- list(list(1, 2), list(3, 4))
+str(x3)
+```
+
+## Hierarchical structure
+
+```{r}
+#| echo: true
+#| #| code-fold: true
+#| #| code-summary: "code"
+x5 <- list(1, list(2, list(3, list(4, list(5)))))
+str(x5)
+```
+
+## View
+
+view(x5)
+
+## List columns
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df <- tibble(
+  x = 1:2,
+  y = c("a", "b"),
+  z = list(list(1, 2), list(3, 4, 5))
+)
+df
+```
+
+## Recommended
+
+https://r4ds.hadley.nz/rectangling.html#introduction
+
+## intermezzo
+
+## lese fk_op_dat.csv
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+fk_op_dat <- read_csv2(here("data","fk_op_dat.csv"))
+fk_op_dat
+```
+
+## lese erneut
+
+Open in Data raw mode
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+fk_op_dat <- read_delim(here("data","fk_op_dat.csv"),
+  delim = ";",
+  escape_double = FALSE,
+  trim_ws = TRUE
+)
+```
+
+## Analysieren Sie die Daten
+
+Wie? Was fällt auf?
+
+## Trick 1
+
+library(DataExplorer)\
+create_report()
+
+## write files
+
+write_csv(stat, "./data/stat_modified.csv")
+
+Achtung: verliert "column specification"
+
+## besser
+
+write_rds(stat, "stat_modified.rds)
+
+## Excel
+
+![Kryptonite?](./images/superman-kryptonite.jpg) https://www.sideshow.com/blog/superman-weakness
+
+## Maarteen van Smeden
+
+Those, who say that some data is always better than no data \
+have never met the true evil\
+that is color coded Excel spreadsheets
+
+::: incremental
+-   Export to csv
+-   -library(readxl)
+-   -library(writexl)
+:::
+
+## Glucose xlsx
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+glucose <- read_xlsx("./data/glucose.xlsx")
+glucose
+```
+
+## Glucose versuch 2 xlsx
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+glucose <- read_xlsx("./data/glucose.xlsx", skip = 3)
+glucose
+```
+
+## Variablen anschauen
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+glucose
+```
+
+## skim
+
+## View in data viewer
+
+## Googlesheets
+
+## SQL
+
+Stackoverflow library(DBI)\
+library(dbplyr)
+
+con \<- DBI::dbConnect( RMariaDB::MariaDB(), username = "foo" ).\
+con \<- DBI::dbConnect( RPostgres::Postgres(), hostname = "databases.mycompany.com", port = 1234 )
+
+## SPSS, stata, sas
+
+read_sas\
+read_sav\
+read_dta
+
+## Parquet
+
+library(arrow)
+
+## JSON
+
+library(jsonlite)
+
+## Details
+
+https://r4ds.hadley.nz/arrow.html https://r4ds.hadley.nz/rectangling.html#json
