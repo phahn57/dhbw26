@@ -1,0 +1,468 @@
+---
+title: "dataR_04_2"
+author: "Peter Hahn"
+format:
+  revealjs:
+    embed-resources: true
+    scrollable: true
+    theme: [default, mystyle]
+editor: visual
+---
+
+## String and date
+
+```{r}
+library(tidyverse)
+library(ggthemes)
+library(prettyunits)
+library(here)
+library(tsibble)
+```
+
+## String
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+a <- "This is a string"
+a
+```
+
+## Escape Sonderzeichen mit
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+a <- "string with \" in it"
+a
+```
+
+## str_view
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+str_view(a)
+```
+
+## string with backslash
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+a <- "string with \\ in it"
+str_view(a)
+```
+
+## Leaning toothpick syndrome (LTS)
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| codemary: "code"
+tricky1 <- "double_quote <- \"\\\"\" # or '\"'
+single_quote <- '\\'' # or \"'\""
+str_view(tricky1)
+```
+
+## raw string r"()"
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+tricky2 <- r"(double_quote <- "\"" # or '"'
+single_quote <- '\'' # or "'")"
+str_view(tricky2)
+```
+
+## Wir erinnern uns
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+name_data <- read_csv("./data/name_data.csv")
+name_data
+```
+
+## separate
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_delim <- name_data |>
+  separate(col = id, into = c("vorname", "name"))
+df_delim
+```
+
+## separate with sep
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_delim_2 <- name_data |>
+  separate(col = id, into = c("vorname", "name"), sep = ",")
+df_delim_2
+```
+
+## part of string
+
+## nur 3 Stellen der ICD
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_delim |> mutate(icd = str_sub(icd, 1, 3))
+```
+
+## Filter alle mit "M" in der ICD
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_delim |> filter(str_detect(icd, "M"))
+```
+
+## Bilde logische Variable
+
+Klasse M = 1 oder G = 0
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_delim |>
+  mutate(class_M = ifelse(str_detect(icd, "M"), 1, 0)) |>
+  select(name, icd, class_M)
+```
+
+## Blutdruck
+
+-   niedrig \< 130
+-   grenzwertig \>= 130 - \< 140
+-   hoch \>= 140
+
+nur Name, bp1 und class_bp
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_delim |>
+  mutate(
+    class_bp = case_when(
+      bp1 < 130 ~ "niedrig",
+      bp1 >= 130 & bp1 < 140 ~ "grenzwertig",
+      bp1 >= 140 ~ "hoch"
+    )
+  ) |>
+  select(name, bp1, class_bp)
+```
+
+## Länge der Namen
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_delim |>
+  mutate(name_length = str_length(name)) |>
+  select(vorname, name, name_length)
+```
+
+# Datum
+
+## lubridate
+
+## Hier und jetzt
+
+today()\
+now()
+
+## ISO8601
+
+-   3 April 2025\
+-   2025-04-03\
+-   3 April 2025 18:00\
+-   2025-04-03T18:00
+
+## load_data
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+name_data <- read_csv(here("data","name_data.csv"))
+name_data
+```
+
+## Spalten anschauen
+
+id bp1 bp2 icd gebdat aufnahme\
+<chr> <dbl> <dbl> <chr> <chr> <date>
+
+## character to date:formats
+
+![dt formats](./images/date-time.png) \## convert
+
+## Umwandlung
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_date <- name_data |> mutate(gebdat = dmy(gebdat))
+df_date
+```
+
+## weekday
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_date <- df_date |> mutate(wd_aufnahme = wday(aufnahme))
+df_date
+```
+
+## weekday with label
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_date <- df_date |> mutate(wd_aufnahme = wday(aufnahme, label = TRUE))
+df_date
+```
+
+## Aufgabe
+
+Bilde neue Variable für Aufnahme-Datum:\
+- Wochentag - Monat - Quartal
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+df_date <- df_date |>
+  mutate(weekday = wday(aufnahme, label = TRUE)) |>
+  mutate(month = month(aufnahme, label = TRUE)) |>
+  mutate(quart = quarter(aufnahme))
+df_date
+```
+
+## Date arithmetics
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+h_age <- today() - ymd("1957-04-18")
+h_age
+```
+
+## Intermezzo
+
+library(prettyunits)
+
+## pretty_dt
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+pretty_dt(h_age)
+```
+
+## pretty seconds
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+pretty_dt(as.difftime(1000, units = "secs"))
+```
+
+## lubridate duration in seconds
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+seco <- as.duration(h_age)
+seco
+```
+
+## prettier
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+pretty_sec(seco)
+
+```
+
+# plot
+
+## flights
+
+flights from nycflights flight_data
+
+```{r}
+flight_data <- nycflights23::flights
+```
+
+## weekday
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flight_data <- flight_data  |> 
+  mutate(weekday = wday(time_hour, label = TRUE))
+unique(flight_data$weekday)
+```
+
+## Warum
+
+So\\.
+
+## Ausschreiben
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flight_data <- flight_data  |> 
+  mutate(weekday = wday(time_hour, label = TRUE, abbr = FALSE))
+unique(flight_data$weekday)
+```
+
+## number of flights per origin and weekday
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flight_data |> count(origin, weekday)
+```
+
+## Plot
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flight_data |>
+  count(origin, weekday) |> 
+  ggplot(aes(weekday, n)) +
+  geom_col(aes(color = origin)) +
+  theme_stata()
+```
+
+## Was geht besser?
+
+## entstapeln
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flight_data |>
+  count(origin, weekday) |> 
+  ggplot(aes(as.factor(weekday), n)) +
+  geom_col(position = "dodge", aes(color = origin)) +
+  theme_stata()
+```
+
+## Farbe
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+flight_data |>
+  count(origin, weekday) |> 
+  ggplot(aes(as.factor(weekday), n)) +
+  geom_col(position = "dodge", aes(fill = origin)) +
+  theme_stata()
+```
+
+# library(tsibble)
+
+index: order from past to present key: variables that define observations over time
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+library(tsibble)
+weather <- nycflights23::weather %>%
+  select(origin, time_hour, temp, humid, precip)
+weather_tsbl <- as_tsibble(weather, key = origin, index = time_hour)
+```
+
+## index_by
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+weather_tsbl |>
+  group_by_key() %>%
+  index_by(year_month = ~ yearmonth(.)) %>% # monthly aggregates
+  summarise(
+    avg_temp = mean(temp, na.rm = TRUE),
+    ttl_precip = sum(precip, na.rm = TRUE)
+  )
+```
+
+## autoplot with feasts
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+library(feasts)
+weather_tsbl |> autoplot()
+```
+
+## grouping
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: "code"
+weather_tsbl |>
+  group_by_key() |>
+  index_by(year_month = ~ yearmonth(.)) |> # monthly aggregates
+  summarise(
+    avg_temp = mean(temp, na.rm = TRUE),
+    ttl_precip = sum(precip, na.rm = TRUE)
+  ) |>
+  ggplot(aes(year_month, avg_temp)) +
+  geom_point() +
+  theme_bw()
+```
+
+## Aufgabe
+
+fk_stat.csv
+
+Anzahl der Aufnahmen\
+Abteilung und Wochentag dar.
+
+-   Tabelle mit Vergleich 2023 -2024
+
+-   Grafik für 2024, eine Grafik für 2023
+
