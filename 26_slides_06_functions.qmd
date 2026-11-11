@@ -1,0 +1,586 @@
+---
+title: "Funktionen in R"
+author: "Peter Hahn"
+format:
+  revealjs:
+    embed-resources: true
+    theme: [default, mystyle]
+editor: visual
+---
+
+```{r}
+#| echo: false
+#| message: false
+library(tidyverse)
+```
+
+## Warum Funktionen? {.build}
+
+-   **Wiederverwendbarkeit** — einmal schreiben, überall nutzen
+-   **Lesebarkeit** — Code wird selbsterklärend durch gute Namen
+-   **Wartbarkeit** — Änderungen an einer Stelle wirken überall
+
+## Wenn Du etwas mehr als zweimal machst {.build}
+
+> Mache eine Funktion.
+
+Das ist keine Regel — es ist ein **Gefühl**, das sich mit Erfahrung entwickelt.
+
+------------------------------------------------------------------------
+
+## Was ist eine Funktion? {.build}
+
+Eine Funktion **kapselt** einen wiederkehrenden Gedanken:
+
+```         
+Eingabe  →  Verarbeitung  →  Ausgabe
+   │           │              │
+Argumente    Logik         Rückgabewert
+```
+
+In python:
+
+``` python:
+def meine_funktion(arg1, arg2="Standardwert")
+# Code hier 
+  return arg1 + arg2 # optional, aber empfohlen 
+```
+
+In R:
+
+``` r
+name <- function(arg1,arg2) {
+   # Code hier
+  return (arg 1 + arg2)
+}
+```
+
+------------------------------------------------------------------------
+
+## Beispiel: Normalisieren {.build}
+
+### Ohne Funktion — wiederholter Code
+
+```{r}
+#| echo = TRUE, eval=FALSE
+df <- tibble(
+  a = rnorm(5),
+  b = rnorm(5),
+  c = rnorm(5),
+  d = rnorm(5)
+)
+
+df |> mutate(
+  a = (a - min(a, na.rm = TRUE)) / (max(a, na.rm = TRUE) - min(a, na.rm = TRUE)),
+  b = (b - min(b, na.rm = TRUE)) / (max(b, na.rm = TRUE) - min(b, na.rm = TRUE)),
+  c = (c - min(c, na.rm = TRUE)) / (max(c, na.rm = TRUE) - min(c, na.rm = TRUE)),
+  d = (d - min(d, na.rm = TRUE)) / (max(d, na.rm = TRUE) - min(d, na.rm = TRUE))
+)
+```
+
+**Problem:** Der gleiche Ausdruck viermal — leicht zu verwechseln (z.B. `min(a)` statt `min(b)` bei Spalte b).
+
+------------------------------------------------------------------------
+
+## Lösung: Eine Funktion {.build}
+
+```{r}
+#| echo = TRUE
+normalize <- function(x) {
+  (x - min(x, na.rm = TRUE)) / 
+    (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+}
+
+# Jetzt einfach und fehlerfrei:
+df <- tibble(a = rnorm(5), b = rnorm(5))
+df |> mutate(across(everything(), normalize))
+```
+
+------------------------------------------------------------------------
+
+## Anatomie einer Funktion {.build}
+
+``` r
+mein_name <- function(Argument1, Argument2 = "Standardwert") {
+  # Dokumentation (optional aber empfohlen)
+  
+  # Körper: beliebiger R-Code
+  Ergebnis <- Argument1 + Argument2
+  
+  # Rückgabe (explizit oder implizit)
+  return(Ergebnis)  # oder einfach: Ergebnis
+}
+```
+
+| Teil          | Beschreibung                         |
+|---------------|--------------------------------------|
+| **Name**      | Was die Funktion tut (Verbum)        |
+| **Argumente** | Was sie braucht (mit Defaultwerten!) |
+| **Körper**    | Was sie tut (Logik)                  |
+| **Rückgabe**  | Was sie zurückgibt                   |
+
+------------------------------------------------------------------------
+
+## Namenskonventionen {.build}
+
+``` r
+# ✅ Gut: klein, beschreibend, Verben
+normalize(x)
+calculate_mean(values)
+plot_distribution(data, x_var)
+
+# ❌ Schlecht: unklar, abgekürzt, Substantive
+n(x)           # was bedeutet "n"?
+calc(v)        # zu kurz, mehrdeutig
+Data(x)        # Funktion ist eine Handlung, kein Ding
+```
+
+## Camel
+
+![](./images/camel.jpg)
+
+## Faustregel:
+
+Der Name sollte sein wie ein **guter Kommentar** — er sagt, *was* passiert.
+
+------------------------------------------------------------------------
+
+## Argumente {.build}
+
+## Positionell vs. Benannt
+
+```{r}
+#| echo = TRUE
+# Positionell (gefährlich bei vielen Argumenten)
+round(3.14159, 2)
+
+# Benannt (klar und sicher)
+round(x = 3.14159, digits = 2)
+
+# Gemischt (Default zuerst, dann explizit)
+round(3.14159, digits = 2)
+```
+
+## Defaultwerte {.build}
+
+```{r}
+#| echo = TRUE
+# Ohne Default — muss immer angegeben werden
+round(3.14159, digits = 2)
+
+# Mit Default — optional
+round(3.14159)          # → 3 (digits = 0 ist Default)
+
+# Eigene Funktion mit sinnvollen Defaults
+truncate <- function(x, digits = 0) {
+  floor(x * 10^digits) / 10^digits
+}
+
+truncate(3.14159, digits = 2)   # → 3.14
+truncate(3.14159)               # → 3 (Default verwendet)
+```
+
+------------------------------------------------------------------------
+
+## Rückgabewerte {.build}
+
+### Implizit vs. Explizit
+
+```{r}
+#| echo = TRUE
+# Implizit (letzter Ausdruck wird zurückgegeben) — EMPFOHLEN
+normalize <- function(x) {
+  (x - min(x, na.rm = TRUE)) / 
+    (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+}
+
+# Explizit (klar, aber unnötig verbose)
+normalize2 <- function(x) {
+  result <- (x - min(x, na.rm = TRUE)) / 
+    (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+  return(result)
+}
+
+# Beide funktionieren gleich:
+normalize(1:5)   # → 0, 0.25, 0.5, 0.75, 1
+normalize2(1:5)  # → 0, 0.25, 0.5, 0.75, 1
+```
+
+**Empfehlung:** Implizite Rückgabe — sie ist kürzer und lesbarer.\
+Ich tendiere eher zu explizit
+
+------------------------------------------------------------------------
+
+## Seiteneffekte {.build}
+
+Manche Funktionen tun etwas **außerhalb** ihres Rückgabewerts:
+
+```{r}
+#| echo = TRUE, eval=FALSE
+# Seiteneffekt: Datei wird geschrieben (Rückgabe ist NULL)
+write.csv(mtcars, "mtcars.csv")
+
+# Seiteneffekt: Plot wird angezeigt
+plot(mtcars$mpg, mtcars$wt)
+
+# Seiteneffekt: Nachricht wird ausgegeben
+message("Verarbeitung abgeschlossen!")
+```
+
+## Faustregel
+
+Funktionen mit Seiteneffekten sollten **explizit benannt** werden:
+
+``` r
+save_data(df, filename)    # klar: speichert etwas
+load_data(filename)        # klar: lädt etwas
+```
+
+------------------------------------------------------------------------
+
+## Scoping-Regeln {.build}
+
+## Wer hat Zugriff auf was?
+
+```{r}
+#| echo = TRUE
+global_var <- 10
+
+my_function <- function(x) {
+  local_var <- x * 2
+  
+  inner_function <- function() {
+    # Kann auf global_var UND local_var zugreifen!
+    global_var + local_var
+  }
+  
+  inner_function()
+}
+
+my_function(5)   # → 20 (10 + 5*2)
+```
+
+```{r}
+#| echo = TRUE
+global_var <- 10
+
+my_function <- function(x) {
+  local_var <- x * 2
+  global_var <- global_var * 10
+  inner_function <- function() {
+    # Kann auf global_var UND local_var zugreifen!
+    global_var + local_var
+  }
+  
+  inner_function()
+}
+```
+
+my_function ? global_var ?
+
+## Lexikalisches Scoping in R {.build}
+
+R sucht Variablen in dieser Reihenfolge:
+
+1.  **Aktueller Funktionskörper** (lokale Variablen)
+2.  **Umgebende Funktion** (geschachtelte Funktionen)
+3.  **Globale Umgebung** (global env)
+4.  **Installierte Pakete**
+
+## lokal \<-\> global
+
+```{r}
+#| echo = TRUE
+counter <- 0
+
+increment <- function() {
+  counter <- counter + 1   # Erzeugt NEUE lokale Variable!
+  counter
+}
+
+increment()   # → 1 (lokaler counter)
+counter       # → 0 (globaler counter unverändert!)
+```
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+## Tidy Evaluation: {{ }} {.build}
+
+## Das Problem mit Strings
+
+```{r}
+#| echo = TRUE, eval=FALSE
+# Alte Methode — Strings sind fehleranfällig
+grouped_mean <- function(df, group_var, mean_var) {
+  df |> 
+    group_by(group_var) |>
+    summarize(mean = mean(mean_var))   # group_var wird nicht aufgelöst!
+}
+```
+
+## grouped_mean(mtcars, "cyl", "mpg") ?
+
+## Tidy Evaluation: {{ }} — Die Lösung {.build}
+
+```{r}
+#| echo = TRUE
+grouped_mean <- function(df, group_var, mean_var) {
+  df |> 
+    group_by({{group_var}}) |>
+    summarize(mean_mpg = mean({{mean_var}}))
+}
+```
+
+```{r}
+grouped_mean(mtcars, cyl, mpg)
+```
+
+## Was macht {{ }}? {.build}
+
+{{ }} **"umarmt"** (embraces) die Variable und ersetzt sie durch den Spaltennamen:
+
+```         
+group_var  →  {cyl}  →  cyl (als Symbol)
+mean_var   →  {mpg}  →  mpg (als Symbol)
+```
+
+**{{ }} heißt "embrace" auf Englisch — es umarmt die Variable und löst sie auf.**
+
+------------------------------------------------------------------------
+
+## {{ }} in Plotting-Funktionen {.build}
+
+```{r}
+#| echo = TRUE, eval=FALSE
+plot_penguins <- function(data, x, y, color) {
+  ggplot(data = data, mapping = aes(
+    x = {{x}}, y = {{y}}, color = {{color}}
+  )) + 
+    geom_point() +
+    theme_minimal()
+}
+
+# Verwendung:
+library(palmerpenguins)
+plot_penguins(penguins, flipper_length_mm, body_mass_g, species)
+```
+
+**Ohne {{ }}** müsste man `aes_string()` oder `!!` verwenden — umständlich und fehleranfällig.
+
+------------------------------------------------------------------------
+
+## Fehlerbehandlung {.build}
+
+## Was passiert, wenn etwas schiefgeht?
+
+```{r}
+#| echo = TRUE
+# Ohne Fehlerbehandlung — Absturz!
+normalize(c(1, 2, 3))   # → OK
+
+# Problem: alle Werte gleich (Division durch 0)
+normalize(c(5, 5, 5))   # → NaN, NaN, NaN (still läuft!)
+
+# Problem: NA-Werte
+normalize(c(1, NA, 3))  # → NaN, NaN, NaN (na.rm hilft nicht immer)
+```
+
+------------------------------------------------------------------------
+
+## Fehlerbehandlung: validate {.build}
+
+```{r}
+#| echo = TRUE, eval=FALSE
+normalize_safe <- function(x) {
+  # Eingabe prüfen
+  if (!is.numeric(x)) {
+    stop("Argument 'x' muss numerisch sein.")
+  }
+  
+  range_val <- range(x, na.rm = TRUE)
+  if (range_val[1] == range_val[2]) {
+    warning("Alle Werte sind gleich — Ergebnis ist NA.")
+    return(rep(NA_real_, length(x)))
+  }
+  
+  (x - min(x, na.rm = TRUE)) / 
+    (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+}
+
+normalize_safe(c(1, 2, 3))      # → OK
+normalize_safe("text")          # → Fehler!
+normalize_safe(c(5, 5, 5))      # → Warnung + NA
+```
+
+------------------------------------------------------------------------
+
+## Fehlerbehandlung: stop vs. warning {.build}
+
+| Funktion         | Verhalten                    | Verwendung        |
+|------------------|------------------------------|-------------------|
+| `stop("Msg")`    | Funktion bricht ab           | Ungültige Eingabe |
+| `warning("Msg")` | Funktion läuft weiter, warnt | Grenzfälle        |
+| `message("Msg")` | Info-Nachricht, kein Abbruch | Status-Updates    |
+
+```{r}
+#| echo = TRUE, eval=FALSE
+safe_divide <- function(a, b) {
+  if (!is.numeric(a) || !is.numeric(b)) {
+    stop("Beide Argumente müssen numerisch sein.")
+  }
+  if (b == 0) {
+    warning("Division durch Null — gebe NA zurück.")
+    return(NA_real_)
+  }
+  a / b
+}
+
+safe_divide(10, 2)   # → 5 (OK)
+safe_divide(10, 0)   # → NA + Warnung
+```
+
+------------------------------------------------------------------------
+
+## Übungen: Teil 1 {.build}
+
+## Übung 1 — Temperatur-Konverter
+
+Schreiben Sie eine Funktion, die Celsius in Fahrenheit umrechnet: `F = C * 9/5 + 32`.
+
+```{r}
+#| echo = TRUE, eval=FALSE
+celsius_to_fahrenheit <- function(celsius) {
+  # YOUR CODE HERE
+}
+
+# Testen:
+celsius_to_fahrenheit(0)    # → 32 (Gefrierpunkt Wasser)
+celsius_to_fahrenheit(100)  # → 212 (Siedepunkt Wasser)
+```
+
+<details>
+
+<summary>Lösung anzeigen</summary>
+
+```{r}
+#| echo = TRUE, eval=FALSE
+celsius_to_fahrenheit <- function(celsius) {
+  celsius * 9/5 + 32
+}
+```
+
+</details>
+
+------------------------------------------------------------------------
+
+### Übung 2 — Wiederholungs-Zähler {.build}
+
+Schreiben Sie eine Funktion, die zählt, wie oft ein Wert in einem Vektor vorkommt.
+
+```{r}
+#| echo = TRUE, eval=FALSE
+count_value <- function(x, target) {
+  # YOUR CODE HERE — ohne sum(x == target)!
+}
+
+# Testen:
+count_value(1:10, 5)    # → 1
+count_value(c("a","b","a","c","a"), "a")   # → 3
+```
+
+<details>
+
+<summary>Lösung anzeigen</summary>
+
+```{r}
+#| echo = TRUE, eval=FALSE
+count_value <- function(x, target) {
+  sum(x == target, na.rm = TRUE)
+}
+```
+
+</details>
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+### Übung 5 — Sichere Division {.build}
+
+Schreiben Sie eine Funktion, die sicher dividiert (mit Fehlerbehandlung):
+
+```{r}
+#| echo = TRUE, eval=FALSE
+safe_divide <- function(a, b) {
+  # YOUR CODE HERE — mit stop() und warning()
+}
+
+# Testen:
+safe_divide(10, 2)    # → 5
+safe_divide(10, 0)    # → NA + Warnung
+safe_divide("a", 2)   # → Fehler!
+```
+
+<details>
+
+<summary>Lösung anzeigen</summary>
+
+```{r}
+#| echo = TRUE, eval=FALSE
+safe_divide <- function(a, b) {
+  if (!is.numeric(a) || !is.numeric(b)) {
+    stop("Beide Argumente müssen numerisch sein.")
+  }
+  if (b == 0) {
+    warning("Division durch Null — gebe NA zurück.")
+    return(NA_real_)
+  }
+  a / b
+}
+```
+
+</details>
+
+------------------------------------------------------------------------
+
+## Checkliste für gute Funktionen {.build}
+
+-   [ ] **Name** ist ein Verb und beschreibt, was die Funktion tut
+-   [ ] **Argumente** haben sinnvolle Defaultwerte
+-   [ ] **Eingaben werden geprüft** (Typ, Bereich, NA-Werte)
+-   [ ] **Fehler sind klar und hilfreich** (`stop()` mit aussagekräftiger Nachricht)
+-   [ ] **Rückgabewert** ist dokumentiert und konsistent
+-   [ ] **Seiteneffekte** sind explizit benannt (z.B. `save_`, `plot_`)
+-   [ ] **Testbar** — kann mit einfachen Beispielen geprüft werden
+
+------------------------------------------------------------------------
+
+## Zusammenfassung {.build}
+
+### Was wir gelernt haben
+
+1.  **Funktionen kapseln** wiederkehrende Logik
+2.  **Name + Argumente + Körper + Rückgabe** — die vier Bausteine
+3.  **Defaultwerte** machen Funktionen flexibler
+4.  **Scoping**: R sucht Variablen von innen nach außen
+5.  **{{ }} (embrace)** löst Spaltennamen in tidyverse-Funktionen auf
+6.  **Fehlerbehandlung** mit `stop()`, `warning()`, `message()`
+
+------------------------------------------------------------------------
+
+## Weiterführende Themen {.build}
+
+-   **Higher-order functions** — Funktionen, die andere Funktionen als Argument nehmen (`map()`, `filter()`)
+-   **S3/S4 Klassen** — eigene Datentypen mit Methoden definieren
+-   **Metaprogrammierung** — Code als Daten manipulieren (`rlang::enquo()`)
+-   **Packages schreiben** — Funktionen für andere verfügbar machen
+
+## Fragen?
+
+------------------------------------------------------------------------
+
+## Hausaufgabe
+
+Bilde eine Funktion extract_date, die Wochentag und Jahr aus einem Datumsfeld extrahiert und Fehler (Datum ist Stringvaiable) abfängt.
